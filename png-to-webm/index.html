@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>png to webm</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>PNG add green background to video</h1>
+        
+        <div>
+            <a href="https://github.com/hipop/png-alpha-video-generator#">github</a>
+            <a href="../player/index.html">player</a>
+        </div>
+        <div class="control-panel">
+            <div class="control-panel-item">
+                <label for="colorPicker">Step1: Select background color</label>
+                <input type="color" id="colorPicker" value="#00ff00">
+            </div>
+            <div class="control-panel-item">
+                <label for="fileSelectBtn">Step2: Select PNG files</label>
+                <input type="file" id="fileSelectBtn" accept="image/png" multiple>
+            </div>
+            <div class="control-panel-item">
+                <label for="playBtn">Step3: Play</label>
+                <button id="playBtn" disabled>Play</button>
+            </div>
+            <div class="control-panel-item">
+                <label for="startRecordBtn">Step4: Start Record</label>
+                <button id="startRecordBtn" disabled>Start Record</button>
+            </div>
+            <div class="control-panel-item">
+                <label for="saveVideoWithBgBtn">Step5: Save Video With Background</label>
+                <button id="saveVideoWithBgBtn" disabled>Save Video</button>
+            </div>
+            <div class="control-panel-item">
+                <label for="saveVideoWithoutBgBtn">Step5: Save Video Without Background</label>
+                <button id="saveVideoWithoutBgBtn" disabled>Save Video</button>
+            </div>
+        </div>
+        
+        <h2>Canvas player</h2>
+        <div class="stage">
+            <div class="stage-video-with-background chessboard-background">
+                <canvas id="canvas-with-background" width="1920" style="display: none;"></canvas>
+            </div>
+            <div class="stage-video-without-background chessboard-background">
+                <canvas id="canvas-without-background" width="1920" style="display: none;"></canvas>
+            </div>
+        </div>
+        
+        <h2>JPG files With Background</h2>
+        <div class="control-panel">
+            <div class="control-panel-item">
+                <label for="saveBtn">Save JPG</label>
+                <button id="saveBtn" disabled>Save JPG</button>
+            </div>
+        </div>
+        <div class="fileList chessboard-background" id="fileList">
+        </div>
+        
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>

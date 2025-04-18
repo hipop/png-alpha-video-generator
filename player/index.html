@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="style.css">
+    <title>Video Demo</title>
+    <script src="utils.js"></script>
+</head>
+<body>
+    <div class="container">
+        <div class="control-panel">
+            <h1>Video Demo</h1>
+            <div>
+                <a href="https://github.com/hipop/png-alpha-video-generator">github</a>
+                <a href="../player/index.html">player</a>
+            </div>
+            <div class="control-panel-item">
+                <button id="startBtn">Start</button>
+                <button id="stopBtn">Stop</button>
+                <button id="hideVideoBtn">Toggle video</button>
+            </div>
+            <!-- <div class="control-panel-item">
+                <label for="filterColor">Filter Color(去色)</label>
+                <input type="color" id="filterColor" value="#00ff00">
+            </div>
+            <div class="control-panel-item">
+                <label for="threshold">Green Threshold(容差)</label>
+                <input type="range" id="threshold" min="0" max="255" value="50" step="any" style="width: 100%;">
+                <span id="threshold-value">50</span>
+            </div>
+            <div class="control-panel-item">
+                <label for="blur">Blur(高斯模糊)</label>
+                <input type="range" id="blur" min="0" max="10" value="5" step="1" style="width: 100%;">
+                <span id="blur-value">5</span>
+            </div> -->
+
+        </div>
+        <div class="stage">
+            <div class="stage-video">
+                <video id="video" class="stage-video-video" width="100%" height="100%" autoplay loop muted 
+                 playsinline webkit-playsinline x5-playsinline
+                > 
+                    <!-- safari 支持的格式 -->
+                    <!-- ffmpeg -vcodec libvpx-vp9 -i video2.webm -c:v libx265 -tag:v hvc1 video2-1.mp4 -->
+                    <source src="assets/video2.mp4" type='video/mp4; codecs="hvc1"'>
+                    <source src="assets/video2.webm" type='video/webm; codecs="vp9, opus"'>
+                </video>
+                <img src="assets/bg.webp" alt="" class="stage-canvas-bg">
+            </div>
+            <div class="stage-canvas">
+                <canvas id="canvas" class="stage-canvas-canvas"></canvas>
+                <img src="assets/bg.webp" alt="" class="stage-canvas-bg">
+            </div>
+        </div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
