@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, minimum-scale=1, initial-scale=1"
+    />
+    <title>滚轮控制片段播放</title>
+    <style>
+      .container {
+        display: flex;
+        flex-direction: row;
+        height: 100%;
+        width: 100%;
+        position: fixed;
+      }
+      
+      .ctrl-btns {
+        /* display: flex; */
+        flex-direction: row;
+        align-items: center;
+        justify-content: center;
+        flex: 1;
+        position: relative;
+      }
+      .ctrl-btns video {
+        background-color: #8c8c8c80;
+        width: 100%;
+        position: absolute;
+        z-index: 100;
+        top: 0px;
+      }
+      .bg-text {
+        position: absolute;
+        top: 0;
+        left: 0;
+        z-index: 0;
+        background-color: #8c8c8c80;
+        width: 100%;
+        font-size: 2em;
+        height: 34%;
+      }
+      .logs {
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+        height: 90vh;
+      }
+      .long-content {
+        height: 1000vh;
+        background-color: #8c8c8c80;
+      }
+      @media (max-width: 768px) {
+        .container {
+          flex-direction: column;
+        }
+        .bg-text {
+          font-size: 1.2em;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="ctrl-btns">
+        <video
+          id="myVideo"
+          width="800"
+          loop="false"
+          muted
+          preload="false"
+          playsinline
+          webkit-playsinline
+          x5-playsinline
+          onerror="alert('视频加载失败')"
+        >
+          <!-- <source 
+            data-src="../player/assets/output_alpha.mov"
+            type="video/quicktime; codecs=apcn"
+          /> -->
+          <source
+            data-src="../player/assets/video2.mp4"
+            type='video/mp4; codecs="hvc1"'
+            id="safariVideo"
+          />
+          <source
+            data-src="../player/assets/video2.webm"
+            type='video/webm; codecs="vp9, opus"'
+            id="chromeVideo"
+          />
+          Your browser does not support the video tag.
+        </video>
+        <div class="bg-text">
+          请滚动鼠标滚轮
+          <span id="bgText"></span>
+        </div>
+      </div>
+      <div class="logs">
+        <textarea
+          name=""
+          id="metadataValue"
+          rows="100"
+          style="width: 100%"
+        ></textarea>
+      </div>
+
+    </div>
+    <!-- 超长内容 -->
+    <div class="long-content" >
+      <p>请滚动鼠标滚轮</p>
+      <p>请滚动鼠标滚轮</p>
+      <p>请滚动鼠标滚轮</p>
+      <p>请滚动鼠标滚轮</p>
+      <p>请滚动鼠标滚轮</p>
+      <p>请滚动鼠标滚轮</p>
+      <p>请滚动鼠标滚轮</p>
+      <p>请滚动鼠标滚轮</p>
+      <p>请滚动鼠标滚轮</p>
+      <p>请滚动鼠标滚轮</p>
+      <p>请滚动鼠标滚轮</p>
+      <p>请滚动鼠标滚轮</p>
+      <p>请滚动鼠标滚轮</p>
+      <p>请滚动鼠标滚轮</p>
+      <p>请滚动鼠标滚轮</p>
+      <p>请滚动鼠标滚轮</p>
+      <p>请滚动鼠标滚轮</p>
+      <p>请滚动鼠标滚轮</p>
+      <p>请滚动鼠标滚轮</p>
+      <p>请滚动鼠标滚轮</p>
+      <p>请滚动鼠标滚轮</p>
+      
+    </div>
+
+    <script>
+      const video = document.getElementById("myVideo");
+      const metadataValue = document.getElementById("metadataValue");
+      const bgText = document.getElementById("bgText");
+
+      metadataValue.value = `${performance.now()}\r\n`;
+
+      let requestVideoFrameCallbackId = null;
+      // 上一次媒体时间
+      let lastMediaTime = 0;
+      // 平均误差
+      let mediaTimeAvgError = 0;
+      // 是否重新计算平均误差
+      let reStartCacluAvgError = true;
+
+      function goto(time) {
+        return function requestVideoFrameCallback(now, metadata) {
+          video.pause();
+          requestVideoFrameCallbackId = video.requestVideoFrameCallback(
+            requestVideoFrameCallback
+          );
+        };
+      }
+
+      /**
+       * 播放指定时间段的视频
+       * @param {number} timeStart - 开始时间，单位：秒；如果为负数，则从当前位置开始播放
+       * @param {number} timeEnd - 结束时间，单位：秒；如果为负数，则播放到视频结束
+       */
+      function playFromTo(timeStart, timeEnd) {
+        if (requestVideoFrameCallbackId) {
+          video.cancelVideoFrameCallback(requestVideoFrameCallbackId);
+        }
+        video.requestVideoFrameCallback(goto(timeEnd));
+
+        // 播放视频
+        video.loop = false;
+        video.play();
+      }
+
+      
+      window.addEventListener('wheel', (e)=>{
+        // console.log(e)
+        // playFromTo(0, 100);
+      })
+
+      document.addEventListener('scroll', (e)=>{  
+        console.log(e)
+        video.playbackRate = 3;
+        playFromTo(0, 100);
+      })
+
+      // 等待视频元数据加载完成
+      video.addEventListener("loadedmetadata", () => {
+        const totalDuration = video.duration; // 视频总时长（秒）
+        let targetTime = 0; // 目标播放时间（秒）
+
+        metadataValue.value += `完成加载，视频总时长: ${totalDuration}\r\n`;
+
+        document.querySelectorAll("button").forEach((btn) => {
+          btn.disabled = false;
+        });
+      });
+
+      video.addEventListener("error", (e) => {
+        metadataValue.value += `视频加载失败: ${e.target.error.message}\r\n`;
+      });
+
+      // 加载视频
+      // video.load();
+      metadataValue.value += "开始加载视频\r\n";
+      Array.from(video.children).forEach((child) => {
+        child.src = child.dataset.src;
+      });
+      video.load();
+    </script>
+  </body>
+</html>

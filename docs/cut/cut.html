@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, minimum-scale=1, initial-scale=1"
+    />
+    <title>片段播放</title>
+    <style>
+      .container {
+        display: flex;
+        flex-direction: row;
+        height: 100%;
+      }
+      .ctrl-btns {
+        /* display: flex; */
+        flex-direction: row;
+        align-items: center;
+        justify-content: center;
+        flex: 1;
+        position: relative;
+      }
+      .ctrl-btns video {
+        background-color: #8c8c8c80;
+        width: 100%;
+        position: relative;
+        z-index: 100;
+      }
+      .frame-input {
+        position: absolute;
+        top: 0;
+        right: 0;
+        background: none;
+        border: none;
+        text-align: right;
+        color: red;
+        font-size: 2em;
+        /* opacity: 0.2; */
+        z-index: 101;
+      }
+      .bg-text {
+        position: absolute;
+        top: 0;
+        left: 0;
+        z-index: 0;
+        background-color: #8c8c8c80;
+        width: 100%;
+        font-size: 2em;
+        height: 34%;
+      }
+      .logs {
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+        height: 90vh;
+      }
+      @media (max-width: 768px) {
+        .container {
+          flex-direction: column;
+        }
+        .bg-text {
+          font-size: 1.2em;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="ctrl-btns">
+        <video
+          id="myVideo"
+          width="800"
+          loop="false"
+          muted
+          preload="false"
+          playsinline
+          webkit-playsinline
+          x5-playsinline
+          onerror="alert('视频加载失败')"
+        >
+          <!-- <source 
+            data-src="../player/assets/output_alpha.mov"
+            type="video/quicktime; codecs=apcn"
+          /> -->
+          <source
+            data-src="../player/assets/video2.mp4"
+            type='video/mp4; codecs="hvc1"'
+            id="safariVideo"
+          />
+          <source
+            data-src="../player/assets/video2.webm"
+            type='video/webm; codecs="vp9, opus"'
+            id="chromeVideo"
+          />
+          Your browser does not support the video tag.
+        </video>
+        <br />
+        <br />
+        <br />
+        <label for="videoType">如果无法播放，更换解码器</label>
+        <select id="videoType">
+          <option value="hvc1">hvc1</option>
+          <option value="hev1">hev1</option>
+          <option value="hev1.2.4.L150.B0.0.0">hev1.2.4.L150.B0.0.0</option>
+          <option value="hev1.1.6.L93.B0">hev1.1.6.L93.B0</option>
+          <option value="hvc1.2.4.L153.B0.0.0">hvc1.2.4.L153.B0.0.0</option>
+          <option value="hev1.1.6.L93.B0">hev1.1.6.L93.B0</option>
+          <option value="hev1.1.6.L93">hev1.1.6.L93</option>
+        </select>
+        <button onclick="playFromTo(0, 100)" disabled>play</button>
+        <button onclick="playFromTo(0, 1)" disabled>片段1(0s~1s)</button>
+        <button onclick="playFromTo(1, 3)" disabled>片段2(1s~3s)</button>
+        <button onclick="playFromTo(3, 6)" disabled>片段3(3s~6s)</button>
+        <button onclick="playFromTo(6, 7)" disabled>片段4(6s~7s)</button>
+        <button onclick="playFromTo(7, 10)" disabled>片段5(7s~10s)</button>
+        <button onclick="playFromTo(10, 12)" disabled>片段6(10s~12s)</button>
+        <button onclick="playFromTo(-1, 6)" disabled>
+          从当前开始播放到片段3结束
+        </button>
+        <button onclick="playFromTo(-1, -1)" disabled>
+          从当前开始播到结束
+        </button>
+        <input type="text" id="frameInput" value="0" class="frame-input" />
+        <div class="bg-text">
+          我是背景文字
+          <span id="bgText"></span>
+        </div>
+      </div>
+      <div class="logs">
+        <input type="text" id="mediaTimeAvgErrorEle" value="0" />
+        <textarea
+          name=""
+          id="metadataValue"
+          rows="100"
+          style="width: 100%"
+        ></textarea>
+      </div>
+    </div>
+
+    <script>
+      const video = document.getElementById("myVideo");
+      const playBtn = document.getElementById("playBtn");
+      const metadataValue = document.getElementById("metadataValue");
+      const buttons = document.querySelectorAll("button");
+      const mediaTimeAvgErrorEle = document.getElementById(
+        "mediaTimeAvgErrorEle"
+      );
+      const frameInput = document.getElementById("frameInput");
+      const bgText = document.getElementById("bgText");
+      const videoType = document.getElementById("videoType");
+
+      metadataValue.value = `${performance.now()}\r\n`;
+
+      let requestVideoFrameCallbackId = null;
+      // 上一次媒体时间
+      let lastMediaTime = 0;
+      // 平均误差
+      let mediaTimeAvgError = 0;
+      // 是否重新计算平均误差
+      let reStartCacluAvgError = true;
+
+      function goto(time) {
+        return function requestVideoFrameCallback(now, metadata) {
+          // metadataValue.value += JSON.stringify(metadata) + "\t" + video.currentTime + "\r\n";
+          // metadataValue.value += `${metadata.presentedFrames}: ${metadata.mediaTime}\r\n`;
+          if (reStartCacluAvgError) {
+            mediaTimeAvgError = 0;
+            lastMediaTime = 0;
+            reStartCacluAvgError = false;
+          }
+
+          // 如果是第一次计算
+          if (lastMediaTime != 0) {
+            const mediaTimeAvgErrorValue = metadata.mediaTime - lastMediaTime;
+            mediaTimeAvgError =
+              mediaTimeAvgErrorValue < 0.1
+                ? mediaTimeAvgErrorValue
+                : mediaTimeAvgErrorValue;
+          }
+          lastMediaTime = metadata.mediaTime;
+          mediaTimeAvgErrorEle.value = `误差：${mediaTimeAvgError}`;
+          frameInput.value = `第${metadata.presentedFrames}帧`;
+          bgText.innerText = `${JSON.stringify(metadata, null, 2)}`;
+
+          metadataValue.value += `metadata.mediaTime: ${metadata.mediaTime}, lastMediaTime: ${lastMediaTime}, mediaTimeAvgErrorValue: ${mediaTimeAvgError}\r\n`;
+          metadataValue.scrollTop = metadataValue.scrollHeight;
+          if (metadata.mediaTime >= time) {
+            video.pause();
+            buttons.forEach((btn) => {
+              btn.disabled = false;
+            });
+            return;
+          }
+          requestVideoFrameCallbackId = video.requestVideoFrameCallback(
+            requestVideoFrameCallback
+          );
+        };
+      }
+
+      /**
+       * 播放指定时间段的视频
+       * @param {number} timeStart - 开始时间，单位：秒；如果为负数，则从当前位置开始播放
+       * @param {number} timeEnd - 结束时间，单位：秒；如果为负数，则播放到视频结束
+       */
+      function playFromTo(timeStart, timeEnd) {
+        // 如果视频正在播放，直接返回
+        if (!video.paused) {
+          // return;
+        }
+
+        // 锁住所有按钮
+        buttons.forEach((btn) => {
+          // btn.disabled = true;
+        });
+
+        // 重新计算平均误差
+        reStartCacluAvgError = true;
+
+        // 如果开始时间大于0，则根据平均误差调整视频时间
+        if (timeStart >= 0) {
+          if (mediaTimeAvgError) {
+            if (Math.abs(video.currentTime - timeStart) > mediaTimeAvgError) {
+              video.currentTime = timeStart;
+            }
+          } else {
+            video.currentTime = timeStart;
+          }
+        } else {
+          // 如果开始时间小于0，则从当前位置开始播放
+
+          // 如果预期的结束时间小于进度条时间
+          if (timeEnd >= 0 && timeEnd < video.currentTime) {
+            return;
+          }
+        }
+
+        // 如果结束时间大于0，则根据平均误差调整视频时间
+        if (timeEnd >= 0) {
+          if (requestVideoFrameCallbackId) {
+            video.cancelVideoFrameCallback(requestVideoFrameCallbackId);
+          }
+          video.requestVideoFrameCallback(goto(timeEnd));
+        }
+
+        // 播放视频
+        video.loop = false;
+        video.play();
+      }
+
+      // 等待视频元数据加载完成
+      video.addEventListener("loadedmetadata", () => {
+        const totalDuration = video.duration; // 视频总时长（秒）
+        let targetTime = 0; // 目标播放时间（秒）
+
+        metadataValue.value += `完成加载，视频总时长: ${totalDuration}\r\n`;
+
+        document.querySelectorAll("button").forEach((btn) => {
+          btn.disabled = false;
+        });
+      });
+
+      video.addEventListener("error", (e) => {
+        metadataValue.value += `视频加载失败: ${e.target.error.message}\r\n`;
+      });
+
+      // 加载视频
+      // video.load();
+      metadataValue.value += "开始加载视频\r\n";
+      Array.from(video.children).forEach((child) => {
+        child.src = child.dataset.src;
+      });
+      video.load();
+
+      // 更换解码器
+      videoType.addEventListener("change", (e) => {
+        const videoTypeValue = e.target.value;
+        myVideo.querySelector("#safariVideo").type = `video/mp4; codecs="${videoTypeValue}"`;
+        video.querySelector("#chromeVideo")?.remove()
+
+        video.load();
+        video.play();
+      });
+
+      // 检查解码器支持
+      function checkHEVCSupport() {
+          const types = [
+              'video/mp4; codecs="hev1"',                   // 不完整声明
+              'video/mp4; codecs="hev1.1.6.L93.B0"',        // 常规HEVC
+              'video/mp4; codecs="hev1.2.4.L150.B0"',        // 带Alpha配置,
+              'video/mp4; codecs="hev1.1.6.L93"',          // 常规HEVC
+              'video/mp4; codecs="hvc1"',                  // 不完整声明
+              'video/mp4; codecs="hvc1.1.6.L93"',          // 常规HEVC
+              'video/mp4; codecs="hvc1.2.4.L150"',          // 带Alpha配置
+              'video/mp4; codecs="av01.0.05M.08"',
+              'video/webm; codecs="vp9"',
+              'video/webm; codecs="vp9, opus"',
+              'video/webm; codecs="vp9.00.10.08"',
+              'video/quicktime; codecs="apcn"',
+          ];
+
+          metadataValue.value += `检查解码器支持:\r\n`;
+          types.forEach(type => {
+              metadataValue.value += `Support: ${MediaSource.isTypeSupported(type)}    Type: ${type.padEnd(35)} \r\n`;
+          });
+      }
+      checkHEVCSupport();
+    </script>
+  </body>
+</html>

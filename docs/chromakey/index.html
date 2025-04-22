@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Chromakey</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Chromakey</h1>
+        <p>Only used in browsers that do not support alpha channel video decoders</p>
+        <div class="control-panel">
+            <div class="control-panel-item">
+                <label for="colorPicker">Step1: Select background color</label>
+                <input type="color" id="colorPicker" value="#0000c8">
+                <hr>
+                <button id="playBtn">Play!</button>
+                
+                <button id="offscreenPlayBtn">Offscreen play</button>
+
+            </div>
+        </div>
+        <div class="stage">
+            <div class="video-with-bg">
+                <video class="video" id="video" autoplay muted loop playsinline webkit-playsinline x5-playsinline>
+                    <source src="../player/assets/video2-with-bg.mp4">
+                </video>
+                <img class="backImage" id="backImage" src="../player/assets/bg.webp">
+            </div>
+            <div class="canvas-stage">
+                <canvas id="canvas" class="canvas"></canvas>
+                <div class="backText" id="backText"></div>
+                <img class="backImage" id="backImage" src="../player/assets/bg.webp">
+            </div>
+        </div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>

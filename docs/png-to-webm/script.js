@@ -4,16 +4,41 @@ const fileListElement = document.getElementById('fileList');
 const saveJpgBtn = document.getElementById('saveBtn');
 const canvasWithBgEle = document.getElementById('canvas-with-background');
 const canvasWithoutBgEle = document.getElementById('canvas-without-background');
+const canvasMaskEle = document.getElementById('canvas-mask');
 const playBtn = document.getElementById('playBtn');
 const startRecordBtn = document.getElementById('startRecordBtn');
 const saveVideoWithBgBtn = document.getElementById('saveVideoWithBgBtn');
 const saveVideoWithoutBgBtn = document.getElementById('saveVideoWithoutBgBtn');
+const saveVideoMaskBtn = document.getElementById('saveVideoMaskBtn');
+const previewVideo = document.getElementById('previewVideo');
+const bitRateValue = document.getElementById('bitRateValue');
+const bitRate = document.getElementById('bitRate');
+const fpsValue = document.getElementById('fpsValue');
+const fps = document.getElementById('fps');
+
+// const pixRatio = 1;// Math.max(window.innerWidth / 1920, 2);
+
+const pixRatio = function(){
+    const quality = document.querySelector('input[name="quality"]:checked')?.value;
+    if (quality === '2k') {
+        return 2;
+    } else if (quality === 'hd') {
+        return 1;
+    }
+    return 1;
+}
+
+const getQuality = function(){
+    const quality = document.querySelector('input[name="quality"]:checked')?.value || 'hd';
+    return quality;
+}
 
 // 保存JPG的文件列表
 const pngFileArray = []
 // 保存视频的文件列表
 let recordedPngChunks = [];
 let recordedJpgChunks = [];
+let recordedMaskChunks = [];
 
 fileSelectBtn.addEventListener('change', (e) => {
     const files = e.target.files;
@@ -56,16 +81,32 @@ saveJpgBtn.addEventListener('click', async () => {
     });
 });
 
+// 更新fps
+fpsValue.textContent = fps.value;
+fps.addEventListener('input', () => {
+    fpsValue.textContent = fps.value;
+});
+
 /**
  * 播放动画按钮被点击
  */
 playBtn.addEventListener('click', () => {
     canvasWithBgEle.style.display = 'block';
-    canvasWithBgEle.width = 1920;
+    canvasWithBgEle.width = 1920 * pixRatio();
     canvasWithoutBgEle.style.display = 'block';
-    canvasWithoutBgEle.width = 1920;
-    playAnimation(canvasWithBgEle, pngFileArray, true);
-    playAnimation(canvasWithoutBgEle, pngFileArray, false);
+    canvasWithoutBgEle.width = 1920 * pixRatio();
+    // canvasMaskEle.style.display = 'block';
+    // canvasMaskEle.width = 1920;
+    playAnimation(canvasWithBgEle, pngFileArray, 'jpg', 1000/Number(fps.value));
+    playAnimation(canvasWithoutBgEle, pngFileArray, 'png', 1000/Number(fps.value));
+    // playAnimation(canvasMaskEle, pngFileArray, 'mask', 1000/Number(fps.value));
+});
+
+
+// 更新比特率
+bitRateValue.textContent = bitRate.value;
+bitRate.addEventListener('input', () => {
+    bitRateValue.textContent = bitRate.value;
 });
 
 /**
@@ -73,27 +114,36 @@ playBtn.addEventListener('click', () => {
  */
 startRecordBtn.addEventListener('click', () => {
     canvasWithBgEle.style.display = 'block';
-    canvasWithBgEle.width = 1920;
+    canvasWithBgEle.width = 1920 * pixRatio();
     canvasWithoutBgEle.style.display = 'block';
-    canvasWithoutBgEle.width = 1920;
-    
+    canvasWithoutBgEle.width = 1920 * pixRatio();
+    // canvasMaskEle.style.display = 'block';
+    // canvasMaskEle.width = 1920;
 
     const streamPng = canvasWithoutBgEle.captureStream(30); // 捕获 canvas 流，帧率为 30 FPS
     const streamJpg = canvasWithBgEle.captureStream(30); // 捕获 canvas 流，帧率为 30 FPS
+    // const streamMask = canvasMaskEle.captureStream(30); // 捕获 canvas 流，帧率为 30 FPS
     const mediaRecorderPng = new MediaRecorder(streamPng, { 
         mimeType: 'video/webm; codecs=vp9,opus',
-        videoBitsPerSecond: 1967 * 1024,
+        videoBitsPerSecond: Number(bitRate.value) * 1024 * 1024 * 8,
         audioBitsPerSecond: 128000
     });
     const mediaRecorderJpg = new MediaRecorder(streamJpg, { 
-        mimeType: 'video/webm; codecs=vp9,opus',
-        videoBitsPerSecond: 1967 * 1024,
+        mimeType: 'video/webm; codecs=vp8',
+        videoBitsPerSecond: Number(bitRate.value) * 1024 * 1024 * 8,
         audioBitsPerSecond: 128000
     });
+    /* const mediaRecorderMask = new MediaRecorder(streamMask, { 
+        mimeType: 'video/webm; codecs=vp9,opus',
+        videoBitsPerSecond: Number(bitRate.value) * 1024 * 1024 * 8,
+        audioBitsPerSecond: 128000
+    }); */
+
 
     mediaRecorderPng.ondataavailable = (event) => {
       if (event.data.size > 0) {
         recordedPngChunks.push(event.data);
+        previewVideo.src = URL.createObjectURL(event.data);
       }
     };
     mediaRecorderJpg.ondataavailable = (event) => {
@@ -101,34 +151,45 @@ startRecordBtn.addEventListener('click', () => {
             recordedJpgChunks.push(event.data);
         }
     }; 
+    /* mediaRecorderMask.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+            recordedMaskChunks.push(event.data);
+        }
+    }; */
 
-    playAnimation(canvasWithBgEle, pngFileArray, true, 1000/30, () => {
+
+    playAnimation(canvasWithBgEle, pngFileArray, 'jpg', 1000/Number(fps.value), () => {
         mediaRecorderPng.stop();
         saveVideoWithoutBgBtn.disabled = false;
     });
-    playAnimation(canvasWithoutBgEle, pngFileArray, false, 1000/30, () => {
+    playAnimation(canvasWithoutBgEle, pngFileArray, 'png', 1000/Number(fps.value), () => {
         mediaRecorderJpg.stop();
         saveVideoWithBgBtn.disabled = false;
     });
+    /* playAnimation(canvasMaskEle, pngFileArray, 'mask', 1000/Number(fps.value), () => {
+        mediaRecorderMask.stop();
+        saveVideoMaskBtn.disabled = false;
+    }); */
+
 
     mediaRecorderPng.start();
     mediaRecorderJpg.start();
+    // mediaRecorderMask.start();
 });
 
 /**
  * 保存视频按钮被点击
  */
 saveVideoWithBgBtn.addEventListener('click', async () => { 
-    const blob = new Blob(recordedPngChunks, { type: 'video/webm; codecs=vp9,opus' });
+    const blob = new Blob(recordedJpgChunks, { type: 'video/webm; codecs=vp8' });
     // recordedPngChunks = [];
 
     // 使用 showSaveFilePicker 保存文件
     const handle = await window.showSaveFilePicker({
-    suggestedName: 'video-with-bg.webm',
-    types: [{
-        description: 'MP4 Videos',
-        accept: { 'video/webm': ['.webm'] },
-    }],
+        suggestedName: `video-with-bg-${getQuality()}.webm`
+    }).catch((err) => {
+        console.error(err);
+        alert('无法保存，请在localhost或https页面中运行');
     });
     const writable = await handle.createWritable();
     await writable.write(blob);
@@ -140,24 +201,52 @@ saveVideoWithBgBtn.addEventListener('click', async () => {
  * 保存视频按钮被点击
  */
 saveVideoWithoutBgBtn.addEventListener('click', async () => { 
-    const blob = new Blob(recordedJpgChunks, { type: 'video/webm; codecs=vp9,opus' });
+    const blob = new Blob(recordedPngChunks, { type: 'video/webm; codecs=vp9,opus' });
     // recordedJpgChunks = [];
 
     // 使用 showSaveFilePicker 保存文件
     const handle = await window.showSaveFilePicker({
-        suggestedName: 'video-without-bg.webm',
+        suggestedName: `video-without-bg-${getQuality()}.webm`,
+    }).catch((err) => {
+        console.error(err);
+        alert('无法保存，请在localhost或https页面中运行');
     }); 
     const writable = await handle.createWritable();
     await writable.write(blob);
     await writable.close();
 });
 
+/**
+ * 保存视频按钮被点击
+ */
+saveVideoMaskBtn.addEventListener('click', async () => {
+    const blob = new Blob(recordedMaskChunks, { type: 'video/webm; codecs=vp9,opus' });
+    // recordedMaskChunks = [];
 
-// 播放帧到canvas
-function playAnimation(canvas, pngFileArray, isWithBg = false, frameDelay = 1000/30, callback) {
+    // 使用 showSaveFilePicker 保存文件
+    const handle = await window.showSaveFilePicker({
+        suggestedName: 'video-mask.mp4',
+    }).catch((err) => {
+        console.error(err);
+        alert('无法保存，请在localhost或https页面中运行');
+    });
+    const writable = await handle.createWritable();
+    await writable.write(blob);
+    await writable.close();
+});
+
+/**
+ * 播放动画
+ * @param {Canvas} canvas 
+ * @param {Array} pngFileArray 
+ * @param {string} mode ['jpg', 'png', 'mask']
+ * @param {Number} frameDelay 
+ * @param {Function} callback 
+ */
+function playAnimation(canvas, pngFileArray, mode = 'jpg', frameDelay = 1000/Number(fps.value), callback) {
     currentFrameIndex = 0;
-    canvas.width = pngFileArray[0].img.naturalWidth;
-    canvas.height = pngFileArray[0].img.naturalHeight;
+    canvas.width = pngFileArray[0].img.naturalWidth * pixRatio();
+    canvas.height = pngFileArray[0].img.naturalHeight * pixRatio();
 
     playBtn.disabled = true;
     startRecordBtn.disabled = true;
@@ -179,18 +268,46 @@ function playAnimation(canvas, pngFileArray, isWithBg = false, frameDelay = 1000
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
         // 绘制当前帧
-        const currentImage = isWithBg ? pngFileArray[currentFrameIndex].rawImg : pngFileArray[currentFrameIndex].img;
+        let currentImage = null;
+        switch (mode) {
+            case 'jpg':
+                currentImage = pngFileArray[currentFrameIndex].img;
+                break;
+            case 'png':
+                currentImage = pngFileArray[currentFrameIndex].rawImg;
+                break;
+            case 'mask':
+                currentImage = pngFileArray[currentFrameIndex].rawImg;
+                break;
+        }
         ctx.drawImage(currentImage, 0, 0, canvas.width, canvas.height);
+
+        // 如果是mask模式，则绘制mask
+        if (mode === 'mask') {
+            // 绘制mask
+            const frame = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const frameData = frame.data;
+            // 根据alpha值，将背景设置为黑色
+            for (let i = 0; i < frameData.length; i += 4) {
+                frameData[i] = frameData[i+3];
+                frameData[i+1] = frameData[i+3];
+                frameData[i+2] = frameData[i+3];
+                frameData[i+3] = 255;
+            }
+            ctx.putImageData(frame, 0, 0);
+        }
 
         // 更新帧索引
         // currentFrameIndex = (currentFrameIndex + 1) % totalFrames;
         if (currentFrameIndex >= totalFrames-1) {
-            // 停止播放
-            callback && callback();
-
-            startRecordBtn.disabled = false;
-            playBtn.disabled = false;
-        
+            requestAnimationFrame(() => {
+                // 停止播放
+                setTimeout(() => {
+                    callback && callback();
+                    startRecordBtn.disabled = false;
+                    playBtn.disabled = false;
+                }, 300);
+            });
             return;
         }
         currentFrameIndex = currentFrameIndex + 1;

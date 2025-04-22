@@ -17,17 +17,38 @@
         <div class="control-panel">
             <div class="control-panel-item">
                 <label for="colorPicker">Step1: Select background color</label>
-                <input type="color" id="colorPicker" value="#00ff00">
+                <input type="color" id="colorPicker" value="#0000ff">
             </div>
             <div class="control-panel-item">
                 <label for="fileSelectBtn">Step2: Select PNG files</label>
-                <input type="file" id="fileSelectBtn" accept="image/png" multiple>
+                <input type="file" id="fileSelectBtn" accept="image/*" multiple>
             </div>
             <div class="control-panel-item">
+                <label for="fps">FPS: <span id="fpsValue">30</span></label>
+                <input type="range" id="fps" min="24" max="120" value="30" name="fps" list="tickmarks" />
+                <datalist id="tickmarks">
+                    <option value="24" label="24"></option>
+                    <option value="30" label="30"></option>
+                    <option value="60" label="60"></option>
+                </datalist>
+
+                <br>
+
                 <label for="playBtn">Step3: Play</label>
                 <button id="playBtn" disabled>Play</button>
             </div>
             <div class="control-panel-item">
+                <label for="4kCheckbox">2K</label>
+                <input type="radio" name="quality" value="2k" id="4kCheckbox" >
+                
+                <label for="hdCheckbox">HD</label>
+                <input type="radio" name="quality" value="hd" id="hdCheckbox" checked>
+                <br>
+
+                <label for="bitRate">Bit Rate:<span id="bitRateValue">10</span>MB/s</label>
+                <input type="range" min="1" max="99" value="10" id="bitRate">
+
+                <br>
                 <label for="startRecordBtn">Step4: Start Record</label>
                 <button id="startRecordBtn" disabled>Start Record</button>
             </div>
@@ -39,16 +60,30 @@
                 <label for="saveVideoWithoutBgBtn">Step5: Save Video Without Background</label>
                 <button id="saveVideoWithoutBgBtn" disabled>Save Video</button>
             </div>
+            <div class="control-panel-item">
+                <label for="saveVideoMaskBtn">Step6: Save Video Mask</label>
+                <button id="saveVideoMaskBtn" disabled>Save Video</button>
+            </div>
+        </div>
         </div>
         
         <h2>Canvas player</h2>
         <div class="stage">
             <div class="stage-video-with-background chessboard-background">
-                <canvas id="canvas-with-background" width="1920" style="display: none;"></canvas>
+                <canvas id="canvas-with-background" style="display: none;"></canvas>
             </div>
             <div class="stage-video-without-background chessboard-background">
-                <canvas id="canvas-without-background" width="1920" style="display: none;"></canvas>
+                <canvas id="canvas-without-background" style="display: none;"></canvas>
             </div>
+            <!-- <div class="stage-video-without-background chessboard-background">
+                <canvas id="canvas-mask" style="display: none;"></canvas>
+            </div> -->
+            <div class="stage-video-without-background chessboard-background">
+                <video src="" id="previewVideo" controls autoplay muted style="width: 100%;"></video>
+            </div>
+            <!-- <div class="stage-video-without-background chessboard-background">
+                <canvas id="canvas-mask-mix" style="display: none;"></canvas>
+            </div> -->
         </div>
         
         <h2>JPG files With Background</h2>

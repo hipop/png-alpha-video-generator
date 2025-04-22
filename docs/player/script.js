@@ -9,9 +9,13 @@ const startBtn = document.getElementById('startBtn');
 const stopBtn = document.getElementById('stopBtn');
 const hideVideoBtn = document.getElementById('hideVideoBtn');
 
+const videoWithBgEle = document.getElementById('videoWithBg');
+const videoMaskEle = document.getElementById('videoMask');
+const canvasWithBgAndMaskEle = document.getElementById('canvasWithBgAndMask');
+
 const videoScale = 0.35;
 
-const initCanvas = () => {
+const initCanvas = (canvasEle) => {
     canvasEle.width = 1920 * videoScale;
     canvasEle.height = 1080 * videoScale;
 }
@@ -51,7 +55,7 @@ const drawVideo = (video, canvas) => {
 }
 
 const mainRender = () => {
-    initCanvas()
+    initCanvas(canvasEle)
     drawVideo(videoEle, canvasEle);
     requestAnimationFrame(mainRender);
 }
@@ -61,6 +65,46 @@ videoEle.addEventListener('loadedmetadata', () => {
 });
 
 
+let maskVideoLoaded = 0
+
+videoWithBgEle.addEventListener('loadedmetadata', () => {
+    maskVideoLoaded++;
+    startRenderVideoWithBgAndMask();
+});
+
+videoMaskEle.addEventListener('loadedmetadata', () => {
+    maskVideoLoaded++;
+    startRenderVideoWithBgAndMask();
+});
+
+const renderVideoBgAndMask = (video, videoMask, canvas) => {
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    // ctx.globalCompositeOperation = 'source-over';
+    const frame = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(videoMask, 0, 0, canvas.width, canvas.height);
+    // ctx.globalCompositeOperation = 'source-over';
+    const frameMask = ctx.getImageData(0, 0, canvas.width, canvas.height);
+
+    // 遍历像素数据，将绿布背景设置为透明
+    for (let i = 0; i < frame.data.length; i += 4) {
+        frame.data[i + 3] = frameMask.data[i];
+    }
+    ctx.putImageData(frame, 0, 0);
+    // ctx.putImageData(frameMask, 0, 0);
+}
+
+const startRenderVideoWithBgAndMask = (now, metadata) => {
+    if (maskVideoLoaded === 2) {
+        initCanvas(canvasWithBgAndMaskEle);
+        if (metadata) {
+            videoMaskEle.currentTime = videoWithBgEle.currentTime;
+        }
+        renderVideoBgAndMask(videoWithBgEle, videoMaskEle, canvasWithBgAndMaskEle);
+        videoWithBgEle.requestVideoFrameCallback(startRenderVideoWithBgAndMask);
+        // requestAnimationFrame(startRenderVideoWithBgAndMask);
+    }
+}
 
 
 
